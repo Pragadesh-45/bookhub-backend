@@ -24,7 +24,7 @@ mongodb_uri = os.getenv("MONGODB_URI")
 client = MongoClient(mongodb_uri)  # Use the URI from the environment variable
 db = client["users"]
 users_collection = db["users"]
-user_data_collection = db["user_data"]
+user_data_collection = db["users"]
 
 
 # Define a route for the homepage
@@ -34,41 +34,44 @@ def index():
 
 # User Registration and Login endpoints
 
-# Endpoint for user registration
-@app.route('/register', methods=['POST'])
+# Endpoint for store book
+@app.route('/storebook', methods=['POST'])
 def register():
-    # Extract user data from the request
-    username = request.json.get('username')
-    email = request.json.get('email')
-    password = request.json.get('password')
-    confirm_password = request.json.get('confirm_password')
-    
+    # Extract data from the request
+    bookTitle = request.form.get('bookTitle')
+    bookAuthor = request.form.get('bookAuthor')
+    bookEdition = request.form.get('bookEdition')
+    bookLanguage = request.form.get('bookLanguage')
+    bookCategory = request.form.get('bookCategory')
+    bookRate = request.form.get('bookRate')
+    bookSellerContact = request.form.get('bookSellerContact')
+    bookImage = request.files.get('bookImage')
+
     # Check if any of the required fields are missing
-    if not (username and email and password and confirm_password):
+    if not (bookTitle and bookAuthor and bookEdition and bookLanguage and bookCategory and bookRate and bookSellerContact and bookImage):
         return jsonify({'message': 'All fields are required'}), 400
 
-    # Check if the user with the provided email already exists
-    existing_user = users_collection.find_one({'email': email})
-    if existing_user:
-        return jsonify({'message': 'User with this email already exists'}), 400
+    # You can perform actions with the book details and the uploaded image here.
+    # For example, you can save the image to a directory and store the file path in your database.
 
-    # Check if the password and confirm_password match
-    if password != confirm_password:
-        return jsonify({'message': 'Password and confirm password do not match'}), 400
-
-    # Hash the user's password
-    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    # Create a dictionary with user data
-    user_data = {
-        'username': username,
-        'email': email,
-        'password': hashed_password,
+    # Assuming you want to save the book details in the "users" collection
+    book_data = {
+        "bookTitle": bookTitle,
+        "bookAuthor": bookAuthor,
+        "bookEdition": bookEdition,
+        "bookLanguage": bookLanguage,
+        "bookCategory": bookCategory,
+        "bookRate": bookRate,
+        "bookSellerContact": bookSellerContact
+        # You can add more fields as needed
     }
+    
+    # Insert the book data into the MongoDB collection
+    users_collection.insert_one(book_data)
 
-    # Insert the user data into the database
-    user_id = users_collection.insert_one(user_data).inserted_id
+    # For this example, we'll just return a success message.
+    return jsonify({'message': 'Book registered successfully'}), 201
 
-    return jsonify({'message': 'User registered successfully', 'user_id': str(user_id)}), 201
 
 # Endpoint for user login
 @app.route('/login', methods=['POST'])
